@@ -8,8 +8,7 @@ library(ggplot2)
 library(lubridate)
 library(DT)
 library(plotly)
-source('logic.R')
-
+source('./functions/logic.R')
 
 monthly.cor <- read_csv("./data/CoR.csv")
 monthly.cor <- monthly.cor %>% mutate(
@@ -35,57 +34,7 @@ daily.data <- daily.data %>% mutate(
     )
 
 
-ui <- dashboardPage(
-    dashboardHeader(title="Company Modeling"),
-    dashboardSidebar(
-        sidebarMenu(
-            menuItem("Growth rate Modeling",
-                     tabName="growth_modeling",
-                     icon=icon("poll")),
-            menuItem("Daily Data",
-                     tabName="data_modeling",
-                     icon=icon("table")),
-            menuItem("Assumptions",
-                     tabName="model_assumptions",
-                     icon=icon("file"))
-        )
-    ),
-    dashboardBody(
-        tabItems(
-            tabItem(tabName="growth_modeling", 
-                    fluidRow(
-                    box(box(sliderInput(inputId="i_weight",
-                                        label="B- Growth rate",min=0,max=0.1,value=0.05,step=0.0001)),
-                        box(sliderInput(inputId="i_from",
-                                        label="A - Lower Bound",min=0,max=1,value=0,step=0.1)),
-                        box(sliderInput(inputId="i_to",
-                                        label="K - Upper Bound",min=0,max=9,value=1,step=0.1)),
-                        box(sliderInput(inputId="i_when",
-                                        label="Q - Delay",min=0,max=100,value=1,step=0.1)),
-                        box(numericInput(inputId="i_cmu", "Critical Mass of Users:", 100, min=1, max=10000)),
-                        box(numericInput(inputId="i_start", "Users for day 0:", 15, min=1, max=10000)),
-                        collapsible=TRUE, title="Parameters", status="primary", solidHeader = TRUE),
-                    box(plotlyOutput("growth_function"), collapsible=TRUE, title="Growth Rate of DAU", footer="For 2 years", status="primary", solidHeader = TRUE)),
-                    fluidRow(
-                    box(plotlyOutput("gp_function"), collapsible=TRUE, title="Revenue", footer="For 2 years", status="primary", solidHeader = TRUE, width = 12)
-                    )),
-            tabItem(tabName="data_modeling",
-                    downloadButton("downloadData", "Download"),
-                    dataTableOutput("data_table")
-                    ),
-            tabItem(tabName="model_assumptions",
-                    fluidRow(
-                        box(
-                            verbatimTextOutput(outputId="i_txt", placeholder = TRUE), 
-                            collapsible=TRUE, status="primary", solidHeader = TRUE, width = 12
-                            )
-                        )
-                    )
-        )
-    )
-)
-    
-server <- function(input, output){
+shinyServer(function(input, output){
     
     output$growth_function <- renderPlotly({
         table_df <- add.growth(data=daily.data,
@@ -125,7 +74,7 @@ server <- function(input, output){
             theme(legend.position = "bottom") +
             theme_bw()
     })
-
+    
     output$data_table <- renderDataTable({
         table_df <- add.growth(data=daily.data,
                                B=input$i_weight,
@@ -150,8 +99,24 @@ server <- function(input, output){
             write.table(table_df, file, row.names = FALSE, sep=',')
         }
     )
-    output$i_txt <- renderText({ "test" })
-} 
-
     
-shinyApp(ui = ui, server = server)
+    output$gp_integral_function <-  renderPlotly({
+        table_df <- add.growth(data=daily.data,
+                               B=input$i_weight,
+                               A=input$i_from,
+                               K=input$i_to,
+                               Q=input$i_when)
+        table_df <- add.dau(data=table_df, start=input$i_start)
+        table_df <- add.margin(data=table_df, cmu=input$i_cmu)
+        table_df <- add.daily.rev(data=table_df)
+        table_df <- add.daily.gross.profit(data=table_df)
+        table_df <- add.gp.running.sum(data=table_df)
+        
+        table_df %>% 
+            ggplot() + 
+            geom_area(aes(ymd(date), gp.running.sum), fill="lightblue", lwd=2) +
+            geom_hline(yintercept=0, linetype="dashed", color = "grey40") +
+            theme_bw()
+    })
+    output$i_txt <- renderText({ "test" })
+} )
