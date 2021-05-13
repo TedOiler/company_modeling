@@ -71,6 +71,10 @@ shinyUI(dashboardPage(
                             plotlyOutput("gp_function"))
                     ),
                     fluidRow(
+                        box(collapsible=TRUE, title="Projected PnL", footer="2 Year Projection", status="primary", solidHeader = TRUE, width = 12,
+                            dataTableOutput("pnl_projection"))
+                    ),
+                    fluidRow(
                         box(collapsible=TRUE, title="Break Even Point", footer="2 Year Projection", status="primary", solidHeader = TRUE, width = 12,
                             plotlyOutput("gp_integral_function"))
                     )

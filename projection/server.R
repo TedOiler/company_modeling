@@ -1,3 +1,4 @@
+source('./functions/logic.R')
 library(shiny)
 library(shinydashboard)
 library(tidyr)
@@ -8,7 +9,7 @@ library(ggplot2)
 library(lubridate)
 library(DT)
 library(plotly)
-source('./functions/logic.R')
+library(pivottabler)
 
 monthly.cor <- read_csv("./data/CoR.csv")
 monthly.cor <- monthly.cor %>% mutate(
@@ -118,5 +119,29 @@ shinyServer(function(input, output){
             geom_hline(yintercept=0, linetype="dashed", color = "grey40") +
             theme_bw()
     })
+    
+    output$pnl_projection <- renderDataTable({
+        table_df <- add.growth(data=daily.data,
+                               B=input$i_weight,
+                               A=input$i_from,
+                               K=input$i_to,
+                               Q=input$i_when,
+                               n=input$i_conv)
+        table_df <- add.dau(data=table_df, start=input$i_start)
+        table_df <- add.margin(data=table_df, cmu=input$i_cmu)
+        table_df <- add.daily.rev(data=table_df)
+        table_df <- add.daily.gross.profit(data=table_df)
+        
+        table_df %>% 
+            mutate(month = format(date, "%m"),
+                   year = format(date, "%Y")) %>%
+            group_by(year,month) %>%
+            summarise(
+                revenue = sum(daily.rev),
+                cost.of.sales = sum(daily.CoR),
+                gross.profit = sum(daily.gross.profit)) %>%
+            ungroup()
+    })
+    
     output$i_txt <- renderText({ "test" })
 } )
