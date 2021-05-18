@@ -6,7 +6,7 @@
 # n >0 : affects near which asymptote maximum growth occurs;
 # Q: is related to the value Y(0);
 # C: typically takes a value of 1;
-sigmoid = function(A=0,K=1,C=1,Q=1,B=1,n=1, x) {
+sigmoid=function(A=0,K=1,C=1,Q=1,B=1,n=1, x) {
   y <- A + (K-A) / (C + Q*exp(-B*x))^(1/n) 
   return(y)
 }
@@ -19,7 +19,7 @@ add.growth <- function(data, B, A, K, Q, n=1){
 
 add.dau <- function(data, start) { #daily active users
   data <- data %>% 
-    mutate(dau=start*(1+lag(growth, default = 0)))
+    mutate(dau=start*(1+lag(growth, default=0)))
   return(data)
 }
 

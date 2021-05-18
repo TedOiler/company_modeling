@@ -1,3 +1,5 @@
+source('./functions/logic.R')
+source('./functions/releasenotes.R')
 library(shiny)
 library(shinydashboard)
 library(tidyr)
@@ -8,11 +10,10 @@ library(ggplot2)
 library(lubridate)
 library(DT)
 library(plotly)
-source('./functions/logic.R')
 
 shinyUI(dashboardPage(
     
-    dashboardHeader(title="Company Modeling"),
+    dashboardHeader(title="BeeHyvv v0.0"),
     
     dashboardSidebar(
         sidebarMenu(
@@ -28,14 +29,24 @@ shinyUI(dashboardPage(
             ),
             menuItem(
                     "Daily Data",
-                     tabName="data_modeling",
+                     tabName="data_projection",
                      icon=icon("table")
                     ),
+            menuItem(
+                    "Input",
+                    tabName="input_data",
+                    icon=icon("info")
+            ),
             menuItem(
                     "Assumptions",
                      tabName="model_assumptions",
                      icon=icon("file")
-                    )
+                    ),
+            menuItem(
+                    "Version Release Notes",
+                    tabName="release_notes",
+                    icon=icon("bullhorn")
+            )
         )
     ),
     
@@ -43,7 +54,7 @@ shinyUI(dashboardPage(
         tabItems(
             tabItem(tabName="growth_modeling", 
                     fluidRow(
-                        box(collapsible=TRUE, title="Parameters", status="primary", solidHeader = TRUE,
+                        box(collapsible=T, title="Parameters", status="primary", solidHeader=T,
                             box(sliderInput(inputId="i_weight",
                                             label="B- Growth rate",min=0,max=0.1,value=0.05,step=0.001)),
                             
@@ -61,33 +72,38 @@ shinyUI(dashboardPage(
                             box(numericInput(inputId="i_start", "Users for day 0:", 15, min=1, max=10000)),
                         ),
                         
-                        box(collapsible=TRUE, title="Growth Rate of DAU", footer="2 Year Projection", status="primary", solidHeader = TRUE,
+                        box(collapsible=T, title="Growth Rate of DAU", footer="2 Year Projection", status="primary", solidHeader=T,
                             plotlyOutput("growth_function")
                         )
                     )),
             tabItem(tabName="useful_graphs",
                     fluidRow(
-                        box(collapsible=TRUE, title="Revenue", footer="2 Year Projection", status="primary", solidHeader = TRUE, width = 12,
-                            plotlyOutput("gp_function"))
-                    ),
-                    fluidRow(
-                        box(collapsible=TRUE, title="Projected PnL", footer="2 Year Projection", status="primary", solidHeader = TRUE, width = 12,
-                            dataTableOutput("pnl_projection"))
-                    ),
-                    fluidRow(
-                        box(collapsible=TRUE, title="Break Even Point", footer="2 Year Projection", status="primary", solidHeader = TRUE, width = 12,
+                        box(collapsible=T, title="Revenue", footer="2 Year Projection", status="primary", solidHeader=T, width=6,
+                            plotlyOutput("gp_function")),
+                        box(collapsible=T, title="Break Even Point", footer="2 Year Projection", status="primary", solidHeader=T, width=6,
                             plotlyOutput("gp_integral_function"))
+                    ),
+                    fluidRow(
+                        box(collapsible=T, title="Projected PnL", footer="2 Year Projection", status="primary", solidHeader=T, width=12,
+                            dataTableOutput("pnl_projection"))
                     )
             ),
-            tabItem(tabName="data_modeling",
-                    downloadButton("downloadData", "Download"),
+            tabItem(tabName="data_projection",
+                    downloadButton('downloadData', 'Download'),
                     dataTableOutput("data_table")
+            ),
+            tabItem(tabName="input_data",
+                    dataTableOutput("montly_CoR")
             ),
             tabItem(tabName="model_assumptions",
                     fluidRow(
-                        box(
-                            verbatimTextOutput(outputId="i_txt", placeholder = TRUE), 
-                            collapsible=TRUE, status="primary", solidHeader = TRUE, width = 12))
+                        htmlOutput("pdfview")
+                    )
+            ),
+            tabItem(tabName="release_notes",
+                    fluidRow(
+                        v0.0()
+                    )
             )
         )
     )
