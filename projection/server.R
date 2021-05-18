@@ -9,35 +9,54 @@ library(ggplot2)
 library(lubridate)
 library(DT)
 library(plotly)
-library(pivottabler)
-
-monthly.cor <- read_csv("./data/CoR.csv")
-monthly.cor <- monthly.cor %>% mutate(
-    date=strptime(as.character(date), "%d/%m/%Y"),
-    date=format(date, "%Y-%m-%d"),
-    date=as.Date(date),
-    id.col=paste0(month(date),year(date)),
-    CoR=-CoR)
-
-daily.data <- data.frame(date=seq(as.Date("21-01-01"), as.Date("22-12-31"), by="days"))
-daily.data <- daily.data %>% mutate(
-    id.col=paste0(month(date),year(date))) %>% 
-    left_join(monthly.cor) %>%
-    fill(CoR) %>%
-    rename(
-        monthly.CoR=CoR
-    ) %>% 
-    select(-id.col) %>% 
-    mutate(
-        days.of.month=days_in_month(date),
-        daily.CoR=monthly.CoR/days.of.month,
-        x=seq(-365,364,1)
-    )
-
+library(googlesheets4)
 
 shinyServer(function(input, output){
     
-    daily_data <- reactive({
+    # to showcase the uploaded input file
+    output$monthly_CoR <- renderDataTable({
+        file_to_read <- input$file
+        if(is.null(file_to_read)){
+            return()
+        }
+        read_excel(file_to_read$datapath)
+    })
+    
+    # read the input file with CoR
+    monthly.cor.process <- reactive({
+        # gs4_deauth() # to access the gsheet below
+        file_to_read <- input$file
+        if(is.null(file_to_read)){
+            return()
+        }
+        excel <- as.data.frame(read_excel(file_to_read$datapath))
+        # excel <- as.data.frame(read_sheet("1DfsfbGO5qY3RkRwymwdkDpp9fYLj5GBZeqRLkfR_63A"))
+        excel <- excel %>% mutate(
+            date=strptime(as.character(date), "%d/%m/%Y"),
+            date=format(date, "%Y-%m-%d"),
+            date=as.Date(date),
+            id.col=paste0(month(date),year(date)),
+            CoR=-CoR)
+        excel
+    })
+    
+    # convert it into the daily data format, suitable for analysis
+    daily.data <- reactive({
+        daily.data <- data.frame(date=seq(as.Date("21-01-01"), as.Date("22-12-31"), by="days"))
+        # daily.data <- data.frame(date=seq(input$daterange[1], input$daterange[2], by="days")) # find out why this doesn't work
+        daily.data <- daily.data %>% 
+            mutate(id.col=paste0(month(date),year(date))) %>%
+            left_join(monthly.cor.process()) %>%
+            fill(CoR) %>%
+            rename(
+                monthly.CoR=CoR
+            ) %>%
+            select(-id.col) %>%
+            mutate(
+                days.of.month=days_in_month(date),
+                daily.CoR=monthly.CoR/days.of.month,
+                x=seq(-365,364,1)
+            )
         table_df <- add.growth(data=daily.data,
                                B=input$i_weight,
                                A=input$i_from,
@@ -52,8 +71,9 @@ shinyServer(function(input, output){
         table_df
     })
     
+    # plot for growth rate function TODO: add legend, fix labels
     output$growth_function <- renderPlotly({
-        table_df <- daily_data()
+        table_df <- daily.data()
 
         table_df %>% 
             ggplot(aes(ymd(date),growth)) + 
@@ -61,6 +81,7 @@ shinyServer(function(input, output){
             theme_bw()
     })
     
+    # plot for revenue growh rate and gp functions TODO: add legend, fix labels
     output$gp_function <- renderPlotly({
         table_df <- daily_data()
         
@@ -77,6 +98,18 @@ shinyServer(function(input, output){
             theme_bw()
     })
     
+    # plot for break even point TODO: add legend, fix labels
+    output$gp_integral_function <-  renderPlotly({
+        table_df <- daily_data()
+        
+        table_df %>% 
+            ggplot() + 
+            geom_area(aes(ymd(date), gp.running.sum), fill="lightblue", lwd=2) +
+            geom_hline(yintercept=0, linetype="dashed", color="grey40") +
+            theme_bw()
+    })
+    
+    # data table of daily data
     output$data_table <- renderDataTable({
         table_df <- daily_data()
         
@@ -84,6 +117,7 @@ shinyServer(function(input, output){
             select(-x, -gp.running.sum)
     })
     
+    # download logic for daily data
     output$downloadData <- downloadHandler(
        filename <- function() {
          paste('data-', Sys.Date(), '.xlsx', sep='')
@@ -95,16 +129,7 @@ shinyServer(function(input, output){
        }
      )
     
-    output$gp_integral_function <-  renderPlotly({
-        table_df <- daily_data()
-        
-        table_df %>% 
-            ggplot() + 
-            geom_area(aes(ymd(date), gp.running.sum), fill="lightblue", lwd=2) +
-            geom_hline(yintercept=0, linetype="dashed", color="grey40") +
-            theme_bw()
-    })
-    
+    # data table for PnL projection TODO: make downloadble, and scrolable
     output$pnl_projection <- renderDataTable({
         table_df <- daily_data()
         
@@ -133,6 +158,7 @@ shinyServer(function(input, output){
     },
     options=list(dom='t'))
     
+    # output for pdf showcase TODO: pending
     output$pdfview <- renderText({
         return('<iframe style="height:600px; width:100%" src="./pdfs/applied_statsiscs.pdf"></iframe>')
     })

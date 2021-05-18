@@ -10,6 +10,7 @@ library(ggplot2)
 library(lubridate)
 library(DT)
 library(plotly)
+library(readxl)
 
 shinyUI(dashboardPage(
     
@@ -17,6 +18,11 @@ shinyUI(dashboardPage(
     
     dashboardSidebar(
         sidebarMenu(
+            menuItem(
+                "Input",
+                    tabName="input_data",
+                icon=icon("info")
+            ),
             menuItem(
                     "Growth rate Modeling",
                     tabName="growth_modeling",
@@ -33,11 +39,6 @@ shinyUI(dashboardPage(
                      icon=icon("table")
                     ),
             menuItem(
-                    "Input",
-                    tabName="input_data",
-                    icon=icon("info")
-            ),
-            menuItem(
                     "Assumptions",
                      tabName="model_assumptions",
                      icon=icon("file")
@@ -52,6 +53,27 @@ shinyUI(dashboardPage(
     
     dashboardBody(
         tabItems(
+            tabItem(tabName="input_data",
+                    fluidRow(
+                        box(width=6,
+                            fileInput("file", "Choose a file to upload"),
+                            dateRangeInput("daterange", "Date range:",
+                                           start = "2021-01-01",
+                                           end   = "2022-12-31",
+                                           format = "dd/mm/yy"),
+                            hr(),
+                            p("The data must be in a format of:"),
+                            p("- column 1 name: date"),
+                            p("- column 2 name: CoR"),
+                            p("- column 1 format: DD/MM/YY, example - 01/03/21 (meaning March 2021)"),
+                            p("- column 2 format: number, example - 62.35 (meaning for March 2021 the Cost of Revenue is 62.35€"),
+                            p("*Note: Each row represents one month, therefore if the first row has a date of 01/01/21, the next should be 01/02/21")
+                        ),
+                        box(width=6,
+                            dataTableOutput("monthly_CoR"))
+                    )
+                    
+            ),
             tabItem(tabName="growth_modeling", 
                     fluidRow(
                         box(collapsible=T, title="Parameters", status="primary", solidHeader=T,
@@ -91,9 +113,6 @@ shinyUI(dashboardPage(
             tabItem(tabName="data_projection",
                     downloadButton('downloadData', 'Download'),
                     dataTableOutput("data_table")
-            ),
-            tabItem(tabName="input_data",
-                    dataTableOutput("montly_CoR")
             ),
             tabItem(tabName="model_assumptions",
                     fluidRow(
