@@ -5,10 +5,10 @@ account: ted-oiler
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4123109
-bundleId: 4613965
+bundleId: 4614063
 url: https://ted-oiler.shinyapps.io/projection/
-when: 1621388541.76407
-lastSyncTime: 1621388541.7641
+when: 1621391202.60983
+lastSyncTime: 1621391202.60988
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: data/assumptions and testing.ods|data/CoR.csv|data/CoR.xlsx

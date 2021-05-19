@@ -54,14 +54,14 @@ v0 <- function() {
             "The DAU are a function of their growth rate defined above and the DAU on day zero,
                   which has to be greater than 0 for the model to make sense"
           ),
-          tags$li("margin = ((daily revenue) - (daily cost)) / (daily cost)"),
+          tags$li("margin = ((daily revenue) - (daily cost)) / (daily revenue)"),
           tags$li(
             "The Margin is set to be -0.5 (-50%) when users are less than CMU (adjustable parameter on
                   the tab \"Growth Rate Modeling\") and 0.8 (80%) when DAU is greater or equal to CMU"
           ),
           tags$li(
             "Therefore, since we have the (daily cost) as a given and the margin as a function of the above,
-                  we can calculate (daily revenue) as: (daily revenue) = (daily cost)/(1-margin)"
+                  we can calculate (daily revenue) as: (daily revenue) = (-abs(daily cost))/(margin - 1)"
           ),
           tags$li(
             "Finally since we have (Daily Revenue) and (daily Cost of Revenue), we can aggregate

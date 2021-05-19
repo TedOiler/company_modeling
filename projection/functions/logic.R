@@ -45,7 +45,7 @@ add.margin <- function(data, cmu) {
 
 add.daily.rev <- function(data) {
   data <- data %>%
-    mutate(daily.rev = -daily.CoR / (1 - margin))
+    mutate(daily.rev = -abs(daily.CoR) / (margin - 1))
   return(data)
 }
 

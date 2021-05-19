@@ -188,11 +188,4 @@ shinyServer(function(input, output) {
                                                          download_pnl <- projection()
                                                          write.csv(download_pnl, con)
                                                      })
-    
-    # output for pdf showcase TODO: pending
-    output$pdfview <- renderText({
-        return(
-            '<iframe style="height:600px; width:100%" src="./pdfs/applied_statsiscs.pdf"></iframe>'
-        )
-    })
 })
